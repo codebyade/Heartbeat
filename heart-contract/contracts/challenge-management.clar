@@ -77,3 +77,28 @@
   )
 )
 
+;; Join a challenge
+(define-public (join-challenge (challenge-id uint))
+  (let
+    (
+      (challenge (unwrap! (map-get? challenges { id: challenge-id }) (err err-challenge-not-found)))
+      (current-block stacks-block-height)
+    )
+    (asserts! (< current-block (get end-time challenge)) (err err-challenge-ended))
+    (asserts! (is-none (map-get? challenge-participants { challenge-id: challenge-id, participant: tx-sender })) (err err-already-participated))
+    (map-set challenge-participants
+      { challenge-id: challenge-id, participant: tx-sender }
+      {
+        joined: current-block,
+        completed: false,
+        progress: u0
+      }
+    )
+    (map-set challenges
+      { id: challenge-id }
+      (merge challenge { participants: (+ (get participants challenge) u1) })
+    )
+    (ok true)
+  )
+)
+
